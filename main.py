@@ -36,7 +36,7 @@ def knn_pred(x,data,dist):
 
 # split data into training and target
 def prepare_data(data, labels):
-	train_idx = np.random.choice(len(data), round(len(data)*0.5), replace=False)
+	train_idx = np.random.choice(len(data), round(len(data)*0.8), replace=False)
 	test_idx = np.array(list(set(range(len(data)))-set(train_idx)))
 	x_train = data[train_idx]
 	y_train = labels[train_idx]
@@ -53,47 +53,48 @@ def test_twi(train, test):
 		k = knn_pred(x[0], train, twidist)
 		if k == x[1]:
 			correct += 1
-	print("processed %i inputs in %f s" % (len(test), time.perf_counter()-t))
+	dt = time.perf_counter() - t
+	print("processed %i inputs in %f s" % (len(test), dt))
 	rate = (1-correct/len(test))*100
 	print("twi error rate: %f \n" % rate)
-	return rate
+	return rate, dt
 
 def test_dsig(train, test):
 	correct = 0
-	L = 10 #signature level
+	L = 4 #signature level
 	# compute all signatures
 	print("computing signatures")
-	x_train = [a[0] for a in train]
-	x_test = [a[0] for a in test]
 	t = time.perf_counter()
 	sig_train = [(np.array(dsig(x,L)),y) for (x,y) in train]
 	sig_test = [(np.array(dsig(x,L)),y) for (x,y) in test]
-	t2 = time.perf_counter()
-	print("computed %i level %i signatures in %f seconds" % (len(train)+len(test),L,t2-t))
+	dt2 = time.perf_counter()-t
+	print("computed %i level %i signatures in %f seconds" % (len(train)+len(test),L,dt2))
 	for x in sig_test:
 		k = knn_pred(x[0], sig_train, lambda a,b: np.linalg.norm(b-a))
 		if k == x[1]:
 			correct += 1
-
-	endtime = time.perf_counter()
-	print("processed %i inputs in %f s" % (len(x_test), endtime-t2))
-	print("total process time %f s" % (endtime-t))
-	rate = (1-correct/len(x_test))*100
+	dt = time.perf_counter()-t
+	print("processed %i inputs in %f s" % (len(sig_test), dt2))
+	print("total process time %f s" % dt)
+	rate = (1-correct/len(sig_test))*100
 	print("dsig error rate: %f \n" % rate)
-	return rate
+	return rate, dt
 
-errors = []
-for k in range(50):
+errors_twi = []
+errors_dsig = []
+time_twi = []
+time_dsig = []
+N = 50
+for k in range(N):
+	print("k = %i --------" % k)
 	data, labels = generate_data([[0,1],[-.05, 1]],[0,1])
 	train, test = prepare_data(data, labels)
-	errors.append(test_twi(train, test))
+	rate, dt = test_twi(train, test)
+	errors_twi.append(rate)
+	time_twi.append(dt)
+	rate, dt = test_dsig(train, test)
+	errors_dsig.append(rate)
+	time_twi.append(dt)
 
-print("tested twi distance 50 times, mean error:", np.mean(errors),"\n")
-
-errors = []
-for k in range(50):
-	data, labels = generate_data([[0,1],[-.05, 1]],[0,1])
-	train, test = prepare_data(data, labels)
-	errors.append(test_dsig(train, test))
-
-print("tested dsig distance 50 times, mean error:", np.mean(errors))
+print("tested twi distance %i times, mean error:" % N, np.mean(errors_twi), ", total time: %f s" % sum(time_twi))
+print("tested dsig distance %i times, mean error:" % N, np.mean(errors_dsig), ", total time: %f s" % sum(time_dsig))
