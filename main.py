@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from lib import *
 import numpy as np
 import time
