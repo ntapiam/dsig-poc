@@ -2,6 +2,8 @@ from lib import *
 import numpy as np
 import time
 import os
+from math import isnan
+import datetime
 
 # some functions
 def knn_pred(x,data,dist):
@@ -11,9 +13,8 @@ def knn_pred(x,data,dist):
 	k = np.argmin(dmatrix)
 	return data[k][1]
 
-def test_dsig(train, test):
+def test_dsig(train, test, L=4):
 	correct = 0
-	L = 4 #signature level
 	# compute all signatures
 	print("computing signatures")
 	t = time.perf_counter()
@@ -34,8 +35,13 @@ def test_dsig(train, test):
 
 errors = {}
 runtime = {}
+L = 4
 # execute tests for each dir
-with open('results.txt', 'a') as fout:
+now = datetime.datetime.now()
+filename = 'results_' + now.strftime('%Y%m%d_%H%M%S') + '.txt'
+with open(filename, 'w') as fout:
+	fout.write('Parameters: L=4\n')
+	fout.write('Dataset\tError rate\tTime\n')
 	for dirname, subdirs, files in os.walk('UCRArchive_2018/'):
 		train = []
 		test = []
@@ -45,14 +51,15 @@ with open('results.txt', 'a') as fout:
 		with open(dirname + '/' + basename + '_TRAIN.tsv', 'r') as fp:
 			for line in fp:
 				sample = line.split('\t')
-				train.append((list(map(float,sample[1:])),int(sample[0])))
+				train.append((list(filter(lambda p: not isnan(p), map(float,sample[1:]))),int(sample[0])))
 		with open(dirname + '/' + basename + '_TEST.tsv', 'r') as fp:
 			for line in fp:
 				sample = line.split('\t')
-				test.append((list(map(float,sample[1:])),int(sample[0])))
-		rate, dt = test_dsig(train, test)
-		fout.write("%s %f %f\n" % (basename, rate, dt))
+				test.append((list(filter(lambda p: not isnan(p), map(float,sample[1:]))),int(sample[0])))
+		rate, dt = test_dsig(train, test, L)
+		fout.write("%s\t%f\t%f\n" % (basename, rate, dt))
 		errors[basename] = rate
 		runtime[basename] = dt
+	fout.write("\nTotal time: %f\n" % sum(runtime.values()))
 
 print("Total running time:", sum(runtime.values()))

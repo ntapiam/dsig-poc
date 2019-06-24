@@ -32,7 +32,11 @@ def dsig(x,L,basis=False):
 				for p in comp:
 					outer = [v**p for v in dx]
 					inner = cumsum(multiply(inner,outer)).tolist()
-					last = inner.pop()
+					try:
+						last = inner.pop()
+					except IndexError:
+						print("Series with a single element. Signature is 0.")
+						last = 0
 					inner.insert(0,0)
 				if basis:
 					sig.append((last,list(comp)))
