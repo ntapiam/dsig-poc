@@ -19,6 +19,8 @@ def compress(x):
     return cumsum(dx, axis=0)
 
 def dsig(x,L,basis=False):
+    if isinstance(x[0], (int, float)):
+        x = [[val] for val in x]
     d = len(x[0])
     dx = diff(compress(x), axis=0)
     with open('compositions.txt', 'r') as fp:
