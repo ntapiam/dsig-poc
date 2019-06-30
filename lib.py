@@ -1,6 +1,6 @@
 from numpy.random import ranf, randint
-from numpy import diff, cumsum, pad, inner, multiply
-from itertools import islice
+from numpy import diff, cumsum, multiply, prod
+import itertools as it
 import ast
 
 def gen_signal(p, t, n=100, ran=10):
@@ -14,35 +14,31 @@ def gen_signal(p, t, n=100, ran=10):
     return x
 
 def compress(x):
-    dx = list(filter(lambda v: v != 0, diff(x)))
+    dx = list(filter(lambda v: v.any(), diff(x, axis=0)))
     dx.insert(0,x[0])
-    return cumsum(dx)
+    return cumsum(dx, axis=0)
 
 def dsig(x,L,basis=False):
-    dx = diff(compress(x))
-    sig = []
+    if isinstance(x[0], (int, float)):
+        x = [[val] for val in x]
+    d = len(x[0])
+    dx = diff(compress(x), axis=0)
     with open('compositions.txt', 'r') as fp:
-        comps = list(islice(fp, 2**L-1))
-    #for k in range(L):
-    #   for part in aP(k+1):
-    #       for comp in set(permutations(part)):
+        comps = list(it.islice(fp, 2**L-1))
         for comp in comps:
-                comp = ast.literal_eval(comp)
+            comp = ast.literal_eval(comp)
+            words = it.product(*[it.combinations_with_replacement(range(0,d),p) for p in comp])
+            for word in words:
                 inner = [1]*len(dx)
-                for p in comp:
-                    outer = [v**p for v in dx]
+                for bracket in word:
+                    outer = [prod([v[k] for k in bracket]) for v in dx]
                     inner = cumsum(multiply(inner,outer)).tolist()
-                    try:
-                        last = inner.pop()
-                    except IndexError:
-                        print("Series with a single element. Signature is 0.")
-                        last = 0
+                    last = inner.pop()
                     inner.insert(0,0)
                 if basis:
-                    sig.append((last,list(comp)))
+                    yield (last,list(word))
                 else:
-                    sig.append(last)
-    return sig
+                    yield last
 
 def dsig_dist(x,y,dist,L):
     xsig = dsig(x,L)
