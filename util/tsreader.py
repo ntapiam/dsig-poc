@@ -14,7 +14,7 @@ class TSReader:
                 elif tokens[0] == '@classLabel':
                     self.classes = tokens[2:]
 
-    def read_data(self):
+    def read(self):
         for line in self.freader:
             # : separates dimensions
             dimensions = line.split(':')
@@ -25,3 +25,11 @@ class TSReader:
             values = [[float(v) for v in dims] for dims in values]
             yield zip(*values), curr_class
 
+class TSVReader:
+    def __init__(self, fname):
+        self.freader = open(fname, 'r')
+
+    def read(self):
+        for line in self.freader:
+            data = line.split()
+            yield list(map(float,data[1:])), data[0]
