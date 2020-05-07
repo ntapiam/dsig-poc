@@ -4,35 +4,40 @@ import numpy as np
 from math import sqrt
 import time
 
+
 # generate samples for each class
 def generate_data(p, t, n=100):
     x = []
     y = []
     for k in range(n):
-        x.append(gen_signal(p[0][:],t))
-        y.append(gen_signal(p[1][:],t))
+        x.append(gen_signal(p[0][:], t))
+        y.append(gen_signal(p[1][:], t))
 
     # prepare data
-    data = np.append(x,y,axis=0)
+    data = np.append(x, y, axis=0)
     labels = np.array([0]*n+[1]*n)
     return data, labels
 
+
 # some functions
-def twidist(x,y):
-    d, _, _, _ = dtw(compress(x),compress(y), lambda a,b: (b-a)**2)
+def twidist(x, y):
+    d, _, _, _ = dtw(compress(x), compress(y), lambda a, b: (b-a)**2)
     return sqrt(d)
 
-def dsdist(x,y):
-    xsig = dsig(x,6)
-    ysig = dsig(y,6)
-    return sqrt(sum([(b-a)**2 for (a,_) in xsig for (b,_) in ysig]))
 
-def knn_pred(x,data,dist):
+def dsdist(x, y):
+    xsig = dsig(x, 6)
+    ysig = dsig(y, 6)
+    return sqrt(sum([(b-a)**2 for (a, _) in xsig for (b, _) in ysig]))
+
+
+def knn_pred(x, data, dist):
     dmatrix = []
     for v in data:
-        dmatrix.append(dist(x,v[0]))
+        dmatrix.append(dist(x, v[0]))
     k = np.argmin(dmatrix)
     return data[k][1]
+
 
 # split data into training and target
 def prepare_data(data, labels):
@@ -59,18 +64,19 @@ def test_twi(train, test):
     print("twi error rate: %f \n" % rate)
     return rate, dt
 
+
 def test_dsig(train, test):
     correct = 0
-    L = 4 #signature level
+    L = 4  # signature level
     # compute all signatures
     print("computing signatures")
     t = time.perf_counter()
-    sig_train = [(np.array(dsig(x,L)),y) for (x,y) in train]
-    sig_test = [(np.array(dsig(x,L)),y) for (x,y) in test]
+    sig_train = [(np.array(dsig(x, L)), y) for (x, y) in train]
+    sig_test = [(np.array(dsig(x, L)), y) for (x, y) in test]
     dt2 = time.perf_counter()-t
-    print("computed %i level %i signatures in %f seconds" % (len(train)+len(test),L,dt2))
+    print("computed %i level %i signatures in %f seconds" % (len(train)+len(test), L, dt2))
     for x in sig_test:
-        k = knn_pred(x[0], sig_train, lambda a,b: np.linalg.norm(b-a))
+        k = knn_pred(x[0], sig_train, lambda a, b: np.linalg.norm(b-a))
         if k == x[1]:
             correct += 1
     dt = time.perf_counter()-t
@@ -80,6 +86,7 @@ def test_dsig(train, test):
     print("dsig error rate: %f \n" % rate)
     return rate, dt
 
+
 errors_twi = []
 errors_dsig = []
 time_twi = []
@@ -87,7 +94,7 @@ time_dsig = []
 N = 50
 for k in range(N):
     print("k = %i --------" % k)
-    data, labels = generate_data([[0,1],[-.05, 1]],[0,1])
+    data, labels = generate_data([[0, 1], [-.05, 1]], [0, 1])
     train, test = prepare_data(data, labels)
     rate, dt = test_twi(train, test)
     errors_twi.append(rate)
