@@ -1,5 +1,5 @@
 Functions
 =========
 
-.. autofunction:: lib.issig
+.. autofunction:: lib.dsig
 .. autofunction:: lib.compress
