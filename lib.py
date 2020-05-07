@@ -1,7 +1,8 @@
-from numpy.random import ranf, randint
-from numpy import diff, cumsum, pad, inner, multiply
 from itertools import islice
 import ast
+
+from numpy.random import ranf, randint
+from numpy import diff, cumsum, pad, inner, multiply
 
 def gen_signal(p, t, n=100, ran=10):
     k = randint(n-ran+1)
@@ -14,20 +15,43 @@ def gen_signal(p, t, n=100, ran=10):
     return x
 
 def compress(x):
+    """Compresses a time series by deleting repeated values
+
+    :param x: Time series to be compressed
+    :returns: The compressed version of x
+    :rtype: list
+    """
+
+    #Compute all increments and keep only the non-zero entries
     dx = list(filter(lambda v: v != 0, diff(x)))
+    #Recover the initial value
     dx.insert(0,x[0])
+    #Return the comulative sum of the increments
     return cumsum(dx)
 
 def dsig(x,L,basis=False):
+    """Computes the iterated-sums signature of a time series
+
+    :param x: Time series
+    :param L: Maximum level of the signature to be computed
+    :param basis: Flag used to output basis elements together with
+        signature componentes (default=False)
+    :returns: A list of doubles representing the signature entries
+    :rtype: list
+    """
+
+    #Delete repeated entries and compute increments
     dx = diff(compress(x))
     sig = []
+    #Compositions are pre-generated and read from compositions.txt
     with open('compositions.txt', 'r') as fp:
+        #This relies on the order the partitions are generated
         comps = list(islice(fp, 2**L-1))
-    #for k in range(L):
-    #   for part in aP(k+1):
-    #       for comp in set(permutations(part)):
         for comp in comps:
                 comp = ast.literal_eval(comp)
+                #Iterated sums are computed by a series of inner products
+                #starting with the vector of all ones, and taking powers
+                #according to the composition in use
                 inner = [1]*len(dx)
                 for p in comp:
                     outer = [v**p for v in dx]
