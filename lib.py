@@ -1,17 +1,16 @@
-from itertools import islice
-import ast
+import ast, itertools
 
-from numpy.random import ranf, randint
-from numpy import diff, cumsum, pad, inner, multiply
+import numpy.random as rng
+import numpy as np
 
 def gen_signal(p, t, n=100, ran=10):
-    k = randint(n-ran+1)
+    k = rng.randint(n-ran+1)
     x = []
     for i in range(n):
         if i >= k and i <= (k+ran):
-            x.append(p[1]+t[1]*ranf())
+            x.append(p[1]+t[1]*rng.ranf())
         else:
-            x.append(p[0]+t[0]*ranf())
+            x.append(p[0]+t[0]*rng.ranf())
     return x
 
 def compress(x):
@@ -23,11 +22,11 @@ def compress(x):
     """
 
     #Compute all increments and keep only the non-zero entries
-    dx = list(filter(lambda v: v != 0, diff(x)))
+    dx = list(filter(lambda v: v != 0, np.diff(x)))
     #Recover the initial value
     dx.insert(0,x[0])
     #Return the comulative sum of the increments
-    return cumsum(dx)
+    return np.cumsum(dx)
 
 def dsig(x,L,basis=False):
     """Computes the iterated-sums signature of a time series
@@ -41,12 +40,12 @@ def dsig(x,L,basis=False):
     """
 
     #Delete repeated entries and compute increments
-    dx = diff(compress(x))
+    dx = np.diff(compress(x))
     sig = []
     #Compositions are pre-generated and read from compositions.txt
     with open('compositions.txt', 'r') as fp:
         #This relies on the order the partitions are generated
-        comps = list(islice(fp, 2**L-1))
+        comps = list(itertools.islice(fp, 2**L-1))
         for comp in comps:
                 comp = ast.literal_eval(comp)
                 #Iterated sums are computed by a series of inner products
@@ -55,7 +54,7 @@ def dsig(x,L,basis=False):
                 inner = [1]*len(dx)
                 for p in comp:
                     outer = [v**p for v in dx]
-                    inner = cumsum(multiply(inner,outer)).tolist()
+                    inner = np.cumsum(np.multiply(inner,outer)).tolist()
                     last = inner.pop()
                     inner.insert(0,0)
                 if basis:
