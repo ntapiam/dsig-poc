@@ -1,0 +1,262 @@
+%\documentclass[a4paper,10pt]{article}
+\documentclass{scrartcl}
+%\usepackage[cal=boondoxo]{mathalfa}
+
+\usepackage[]{algorithm2e}
+\usepackage{bbm} % \mathbbm{1}, ..
+\usepackage{dsfont} % \mathds{1}, ..
+
+\usepackage{commath} % \dif
+
+%\usepackage[paperheight=40.75in,paperwidth=20.25in,margin=1in,heightrounded]{geometry}
+%\usepackage{trace} % uncomment to see difference
+
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{mathabx} % \widecheck
+\usepackage{mathrsfs}
+\usepackage{url}
+\usepackage{amssymb,amsfonts}
+\usepackage{color}
+\usepackage{shuffle}
+%\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[usenames,dvipsnames,table]{xcolor}
+
+\usepackage[linecolor=white,backgroundcolor=white,bordercolor=white,textsize=tiny]{todonotes}
+\usepackage{breqn}
+
+\usepackage{silence}
+\WarningFilter{latex}{Marginpar on page} % filter out those warning from todonotes
+\WarningFilter{latex}{Label(s) may have changed} % filter out those warning from breqn
+
+\usepackage[colorlinks,backref]{hyperref}
+\usepackage{graphicx}
+%\usepackage{booktabs}
+\usepackage[font={small,it}]{caption}
+\usepackage[flushleft]{threeparttable}
+\usepackage{longtable}
+\usepackage{enumitem}
+%\usepackage{ulem} .. underlines emph
+
+\let\underbar\underline
+
+\newtheorem{theorem}{Theorem}
+\theoremstyle{plain}
+\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+%\newtheorem{algorithm}[theorem]{Algorithm}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{case}[theorem]{Case}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{conclusion}[theorem]{Conclusion}
+%\newtheorem{condition}[theorem]{Condition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{criterion}[theorem]{Criterion}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{solution}[theorem]{Solution}
+\newtheorem{summary}[theorem]{Summary}
+
+%%
+% letters in front of Theorems-numbers
+%%
+\newtheorem{appendixTheorem}{Theorem}[section]
+\newtheorem{appendixLemma}[appendixTheorem]{Lemma}
+\newtheorem{appendixRemark}[appendixTheorem]{Remark}
+
+%%
+% ordinary Roman font (non-italic)
+%%
+\theoremstyle{definition} 
+\newtheorem{appendixDefinition}[appendixTheorem]{Definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem*{tata}{Generalization}
+\newenvironment{generalization}%
+  {\begin{mdframed}[backgroundcolor=lightgray]\begin{tata}}%
+  {\end{tata}\end{mdframed}}
+
+\newcommand{\too}{\mathop{\longrightarrow}}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\T}{\mathbb{T}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\Q}{\mathbb{Q}}
+\renewcommand{\P}{\mathbb{P}}
+\renewcommand{\H}{\mathbb{H}}
+\newcommand*\laplacian{\mathop{}\!\mathbin\bigtriangleup}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\spann}{\operatorname{span}} % \span is already taken ..
+\renewcommand{\Re}{\operatorname{Re}}
+\renewcommand{\Im}{\operatorname{Im}}
+\newcommand{\End}{\mathrm{End}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\Lip}{\operatorname{Lip}}
+\newcommand{\argmax}{\operatorname{argmax}}
+\newcommand{\argmin}{\operatorname{argmin}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\Ad}{\operatorname{Ad}}
+\newcommand{\ad}{\operatorname{ad}}
+%\newcommand{\ker}{\operatorname{ker}}
+\newcommand{\im}{\operatorname{im}}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\area}{\mathsf{area}}
+\newcommand\proj{\operatorname{proj}}
+\newcommand{\vareps}{\varepsilon}
+\newcommand{\id}{\operatorname{id}}
+
+\newcommand{\mute}[1]{}
+\newcommand{\TODO}[1]{ \textbf{\color{Orange}(TODO #1)} }
+\let\todon\todo
+\renewcommand{\todo}[1]{\todon{\color{red}#1}}
+%\renewcommand{\todo}[1]{ \textbf{\color{Orange}(#1)} }
+\newcommand{\red}[1]{{\color{red}#1}}
+\newcommand{\cyan}[1]{{\color{cyan}#1}}
+\newcommand{\highlight}[1]{\colorbox{yellow}{#1}}
+\renewcommand{\symbol}[1]{{\color{cyan}{#1}}}
+\def\letter#1{\mathtt{#1}}
+\newcommand{\evaluatedAt}[1]{\,\raisebox{-.5em}{$\vert_{#1}$}}
+%\def\word#1{{\color{blue}\mathbf{#1}}}
+
+
+\begin{document}
+
+
+
+%\renewcommand{\labelitemi}{-}%$\blacksquare$}
+
+\parindent0pt           
+\parskip1ex            
+
+
+
+\title{}
+\author{ }
+%\maketitle
+
+\newcommand\ISS{\operatorname{ISS}}
+\newcommand\IIS{\operatorname{IIS}}
+
+\tableofcontents
+
+
+\section{Comparing IIS(piecewise linear), IIS(lead lag) and ISS}
+
+
+Let $x=(x_0,x_1,x_2,..,x_n)$ a discrete-time time series with values in $\R^d$.
+To compute an \textbf{iterated-integrals signature (IIS)},
+one needs a continuous-time time series.
+One way to get this is via \textbf{piecewise linear interpolation} (i.e. draw straight lines between $x_i,x_{i+1}$ for $i=0,\dot n-1$).
+Call this interpolated path $X^{pl}$.
+
+For $d=1$, then
+\begin{align*}
+  \IIS( X^{pl} )_{0,N}
+  &= (1; \int_0^N dX^{pl}_r; \int_{0}^N \int_0^r dX^{pl}_s dX^{pl}_r; \dots) \\
+  &\in \R \oplus \R \oplus \R \oplus \dots 
+\end{align*}
+This signature is not very informative, since
+\begin{align*}
+  \underbrace{\int_0^N \dots \int}_{k\text{ times}} dX^{pl} \dots dX^{pl}
+  =
+  \frac{1}{k!} (X^{pl}_N - X^{pl}_0)^k.
+\end{align*}
+
+For $d=2$
+\begin{align*}
+  \ISS( X^{pl} )_{0,N} \in \R \oplus \R^{2} \oplus \R^{2\otimes2} (= \R^4) \oplus \R^{2\otimes 2\otimes 2} (= \R^8) \oplus ..
+\end{align*}
+Now, writing $X^{pl} = (X^{pl;(1)},X^{pl;(2)})$,
+\begin{align*}
+  \int_0^N \int_0^r dX^{pl;(1)}_s dX^{pl;(2)}_r
+  -
+  \int_0^N \int_0^r dX^{pl;(2)}_s dX^{pl;(1)}_r
+\end{align*}
+can for example \emph{not} be expressed just in terms of $X^{pl;(1)}_N - X^{pl;(1)}_0$ and $X^{pl;(2)}_N - X^{pl;(2)}_0$.
+So here, the higher order iterated integrals really provide new information than just the total increment.
+
+~\\
+
+Going back to $d=1$ the \textbf{lead lag path} $X^{ll}$ is a 2-dimensional continuous-time time series obatined from $x$
+(details in: ..).
+Since it is $2$-dimensional, 
+\begin{align}
+  \label{eq:IISXll}
+  \ISS( X^{ll} )_{0,N} \in \R \oplus \R^{2} \oplus \R^{2\otimes2} = \R^4 \oplus \R^{2\otimes 2\otimes 2} = \R^8 \oplus \dots
+\end{align}
+it hence \emph{can} provide more information than $\ISS(X^{pl})$,
+and one can check that it indeed does.
+
+~\\
+
+The \textbf{iterated-sums signature (ISS)} works with the discrete-time time-series directly.
+For $d=1$,
+\begin{align}
+  \ISS(x)_{0,N}
+  &= (1;\sum_{k} \delta x_k; \sum_{k} (\delta x_k)^2, \sum_{k_1<k_2} \delta x_{k_1} \delta x_{k_2}; \dots) \notag \\
+  &\in \R \oplus \R \oplus \R^2 \oplus \R^4 \oplus \dots
+  \label{eq:ISSx}
+\end{align}
+It lives in a larger space than $\IIS(X^{pl})$, so it could provide more information.
+And it indeed does.
+For example
+\begin{align*}
+  \sum_{k} (\delta x_k)^2
+\end{align*}
+can \emph{not} be written in terms of $\sum_k \delta x_k$.
+So here also, the higher order iterated sums really provide new information than just the total increment.
+
+Moreover we
+\begin{itemize}
+  \item know that $\IIS( X^{ll} )$ can be written as a function of $\ISS( x )$.
+    This follows from the fact that $\IIS( X^{ll} )$ is invariant to time-warping and is a polynomial in the increments $\delta x_k$.
+    Hence, it must be a function of $\ISS(x)$, which already contains \emph{all} polynomial invariants to time-warping.
+
+  \item think that $\ISS( x )$ can be written as a function of $\ISS( X^{ll} )$, but it does not really matter.
+\end{itemize}
+
+So: $\ISS(x)$ contains at least as much information as $\IIS( X^{ll} )$, maybe more.
+It is also more economic.
+One can see this already from the dimensions \eqref{eq:IISXll}, \eqref{eq:ISSx}.
+
+\subsection{Chen's identity, Logarithm}
+
+Let $Y$ be any continous-time time-series (for example $X^{pl}$ or $X^{ll}$ from above).
+Then \textbf{Chen' identity} says
+\begin{align*}
+  \IIS(X)_{a,b} \ISS(X)_{b,c} = \ISS(X)_{a,c}.
+\end{align*}
+
+One can use this for calculation of $\ISS(X^{pl})$ as follows.
+First, it is known that (recall $X^{pl}$ is linear between the points $0,1,..,N$ and at these points its value is $x_0, x_1, \dots, x_N$
+\begin{align*}
+  \IIS(X)_{i,i+1}
+  &=
+  \exp( \delta x_{i+1} ).
+\end{align*}
+Hence
+
+..
+
+
+
+%\begin{thebibliography}{99}
+%\bibitem[BKH2013]{bib:BKH2013}
+%Joseph~M. Burdis, Irina~A. Kogan, and Hoon Hong.
+%\newblock Object-image correspondence for algebraic curves under projections.
+%\newblock {\em SIGMA Symmetry Integrability Geom. Methods Appl.}, 9:Paper 023,
+%  31, 2013.  
+%  
+%\end{thebibliography}
+
+
+
+\end{document}
