@@ -2,30 +2,80 @@
 from lib import *
 import numpy as np
 import time
-import os
-from math import isnan
-import datetime
-import argparse
+
+
+# generate samples for each class
+def generate_data(p, t, n=100):
+    x = []
+    y = []
+    for k in range(n):
+        x.append(gen_signal(p[0][:], t))
+        y.append(gen_signal(p[1][:], t))
+
+    # prepare data
+    data = np.append(x, y, axis=0)
+    labels = np.array([0]*n+[1]*n)
+    return data, labels
+
 
 # some functions
-def knn_pred(x,data,dist):
+def twidist(x, y):
+    d, _, _, _ = dtw(compress(x), compress(y), lambda a, b: (b-a)**2)
+    return sqrt(d)
+
+
+def dsdist(x, y):
+    xsig = dsig(x, 6)
+    ysig = dsig(y, 6)
+    return sqrt(sum([(b-a)**2 for (a, _) in xsig for (b, _) in ysig]))
+
+
+def knn_pred(x, data, dist):
     dmatrix = []
     for v in data:
-        dmatrix.append(dist(x,v[0]))
+        dmatrix.append(dist(x, v[0]))
     k = np.argmin(dmatrix)
     return data[k][1]
 
-def test_dsig(train, test, dist, L=4):
+
+# split data into training and target
+def prepare_data(data, labels):
+    train_idx = np.random.choice(len(data), round(len(data)*0.8), replace=False)
+    test_idx = np.array(list(set(range(len(data)))-set(train_idx)))
+    x_train = data[train_idx]
+    y_train = labels[train_idx]
+    x_test = data[test_idx]
+    y_test = labels[test_idx]
+    return list(zip(x_train, y_train)), list(zip(x_test, y_test))
+
+
+# test twi distance
+def test_twi(train, test):
     correct = 0
+    t = time.perf_counter()
+    for x in test:
+        k = knn_pred(x[0], train, twidist)
+        if k == x[1]:
+            correct += 1
+    dt = time.perf_counter() - t
+    print("processed %i inputs in %f s" % (len(test), dt))
+    rate = (1-correct/len(test))*100
+    print("twi error rate: %f \n" % rate)
+    return rate, dt
+
+
+def test_dsig(train, test):
+    correct = 0
+    L = 4  # signature level
     # compute all signatures
     print("computing signatures")
     t = time.perf_counter()
-    sig_train = [(np.array(dsig(x,L)),y) for (x,y) in train]
-    sig_test = [(np.array(dsig(x,L)),y) for (x,y) in test]
+    sig_train = [(np.array(dsig(x, L)), y) for (x, y) in train]
+    sig_test = [(np.array(dsig(x, L)), y) for (x, y) in test]
     dt2 = time.perf_counter()-t
-    print("computed %i level %i signatures in %f seconds" % (len(train)+len(test),L,dt2))
+    print("computed %i level %i signatures in %f seconds" % (len(train)+len(test), L, dt2))
     for x in sig_test:
-        k = knn_pred(x[0], sig_train, dist)
+        k = knn_pred(x[0], sig_train, lambda a, b: np.linalg.norm(b-a))
         if k == x[1]:
             correct += 1
     dt = time.perf_counter()-t
@@ -35,41 +85,21 @@ def test_dsig(train, test, dist, L=4):
     print("dsig error rate: %f \n" % rate)
     return rate, dt
 
-def distance(a,b):
-    return np.linalg.norm(b-a, p)
 
-errors = {}
-runtime = {}
-parser = argparse.ArgumentParser(description='Run tests on the UCR Archive 2018')
-parser.add_argument('L', nargs='?', default=4, type=int, choices=range(1,11), help='Max. signature level. Must be between 1 and 10 (default: 4)', metavar='L')
-parser.add_argument('p', nargs='?', default=1, type=float, help='Norm exponent (default: 1)')
-args = parser.parse_args()
-p = args.p
-L = args.L
-# execute tests for each dir
-now = datetime.datetime.now()
-filename = 'results_' + now.strftime('%Y%m%d_%H%M%S') + '.txt'
-with open(filename, 'w') as fout:
-    fout.write('Parameters: L=%i p=%f\n' % (L,p))
-    fout.write('Dataset\tError rate\tTime\n')
-    for dirname, subdirs, files in os.walk('UCRArchive_2018/'):
-        train = []
-        test = []
-        basename = os.path.basename(dirname)
-        if not basename: continue
-        print("Getting data from:", basename)
-        with open(dirname + '/' + basename + '_TRAIN.tsv', 'r') as fp:
-            for line in fp:
-                sample = line.split('\t')
-                train.append((list(filter(lambda p: not isnan(p), map(float,sample[1:]))),int(sample[0])))
-        with open(dirname + '/' + basename + '_TEST.tsv', 'r') as fp:
-            for line in fp:
-                sample = line.split('\t')
-                test.append((list(filter(lambda p: not isnan(p), map(float,sample[1:]))),int(sample[0])))
-        rate, dt = test_dsig(train, test, distance, L)
-        fout.write("%s\t%f\t%f\n" % (basename, rate, dt))
-        errors[basename] = rate
-        runtime[basename] = dt
-    fout.write("\nTotal time: %f\n" % sum(runtime.values()))
+errors_twi = []
+errors_dsig = []
+time_twi = []
+time_dsig = []
+N = 50
+for k in range(N):
+    print("k = %i --------" % k)
+    data, labels = generate_data([[0, 1], [-.05, 1]], [0, 1])
+    train, test = prepare_data(data, labels)
+    rate, dt = test_twi(train, test)
+    errors_twi.append(rate)
+    time_twi.append(dt)
+    rate, dt = test_dsig(train, test)
+    errors_dsig.append(rate)
+    time_twi.append(dt)
 
 print("Total running time:", sum(runtime.values()))
