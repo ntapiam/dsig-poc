@@ -1,1 +1,5 @@
-docs/_build
+docs/_build/
+__pycache__/
+background/*
+!background/*.tex
+
