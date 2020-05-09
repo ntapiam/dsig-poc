@@ -67,7 +67,7 @@ def test_twi(train, test):
 
 def test_dsig(train, test):
     correct = 0
-    L = 4  # signature level
+    L = 3  # signature level
     # compute all signatures
     print("computing signatures")
     t = time.perf_counter()
@@ -87,21 +87,22 @@ def test_dsig(train, test):
     return rate, dt
 
 
-errors_twi = []
-errors_dsig = []
-time_twi = []
-time_dsig = []
-N = 50
-for k in range(N):
-    print("k = %i --------" % k)
-    data, labels = generate_data([[0, 1], [-.05, 1]], [0, 1])
-    train, test = prepare_data(data, labels)
-    rate, dt = test_twi(train, test)
-    errors_twi.append(rate)
-    time_twi.append(dt)
-    rate, dt = test_dsig(train, test)
-    errors_dsig.append(rate)
-    time_twi.append(dt)
+if __name__ == "__main__":
+    errors_twi = []
+    errors_dsig = []
+    time_twi = []
+    time_dsig = []
+    N = 50
+    for k in range(N):
+        print("k = %i --------" % k)
+        data, labels = generate_data([[0, 1], [-.05, 1]], [0, 1])
+        train, test = prepare_data(data, labels)
+        rate, dt = test_twi(train, test)
+        errors_twi.append(rate)
+        time_twi.append(dt)
+        rate, dt = test_dsig(train, test)
+        errors_dsig.append(rate)
+        time_dsig.append(dt)
 
-print("tested twi distance %i times, mean error:" % N, np.mean(errors_twi), ", total time: %f s" % sum(time_twi))
-print("tested dsig distance %i times, mean error:" % N, np.mean(errors_dsig), ", total time: %f s" % sum(time_dsig))
+    print("tested twi distance %i times, mean error:" % N, np.mean(errors_twi), ", total time: %f s" % sum(time_twi))
+    print("tested dsig distance %i times, mean error:" % N, np.mean(errors_dsig), ", total time: %f s" % sum(time_dsig))
