@@ -1,22 +1,11 @@
-import ast
-import itertools
-
-import numpy.random as rng
+import itertools as it
+import functools as fnt
 import numpy as np
 
-
-def gen_signal(p, t, n=100, ran=10):
-    k = rng.randint(n-ran+1)
-    x = []
-    for i in range(n):
-        if i >= k and i <= (k+ran):
-            x.append(p[1]+t[1]*rng.ranf())
-        else:
-            x.append(p[0]+t[0]*rng.ranf())
-    return x
+from .decorators import time_this
 
 
-def compress(x):
+def _compress(x):
     """Compresses a time series by deleting repeated values
 
     :param x: Time series to be compressed
@@ -32,7 +21,8 @@ def compress(x):
     return np.cumsum(dx)
 
 
-def dsig(x, L, basis=False):
+@time_this
+def compute(x, L, basis=False):
     """Computes the iterated-sums signature of a time series
 
     :param x: Time series
@@ -42,39 +32,40 @@ def dsig(x, L, basis=False):
     :returns: A list of doubles representing the signature entries
     :rtype: list
     """
-
+    # Return empty list if no data
+    if not x:
+        return []
     # Delete repeated entries and compute increments
-    dx = np.diff(compress(x))
-    sig = []
-    # Compositions are pre-generated and read from compositions.txt
-    with open('compositions.txt', 'r') as fp:
-        # This relies on the order the partitions are generated
-        comps = list(itertools.islice(fp, 2**L-1))
-        for comp in comps:
-            comp = ast.literal_eval(comp)
-            # Iterated sums are computed by a series of inner products
-            # starting with the vector of all ones, and taking powers
-            # according to the composition in use
-            inner = [1]*len(dx)
-            for p in comp:
-                outer = [v**p for v in dx]
-                inner = np.cumsum(np.multiply(inner, outer)).tolist()
-                last = inner.pop()
-                inner.insert(0, 0)
-            if basis:
-                sig.append((last, list(comp)))
-            else:
-                sig.append(last)
-    return sig
+    dx = np.diff(_compress(x))
+    # Generate compositions
+    print(f"Generating basis up to level {L}...")
+    parts = it.chain.from_iterable(map(_aP, range(1, L + 1)))
+    uniqs = map(set, map(it.permutations, parts))
+    comps = it.chain.from_iterable(uniqs)
+    print("Done.")
+
+    # Compute entries for each basis element
+    print("Computing signature...")
+    sig = map(lambda c: _compute_entry(dx, c), comps)
+    return list(sig)
 
 
-def dsig_dist(x, y, dist, L):
-    xsig = dsig(x, L)
-    ysig = dsig(y, L)
-    return sum([dist(a, b) for (a, _) in xsig for (b, _) in ysig])
+def _compute_entry(dx, comp):
+    exponents = np.reshape(comp, (-1, 1))
+    dxs = np.tile(dx, (np.size(comp), 1))
+    mat = np.power(dxs, exponents)
+    start = np.ones(np.size(dx))
+    mat[0,:] = np.cumsum(mat[0,:])
+    redux = fnt.reduce(_inner_shift, mat)
+    return redux[-1]
 
 
-def aP(n):
+def _inner_shift(a, x, only=False):
+    a = np.pad(a, (1, 0))[:-1]
+    return np.cumsum(np.multiply(a, x))
+
+
+def _aP(n):
     """Generate partitions of n as ordered lists in ascending
     lexicographical order.
 
@@ -116,7 +107,7 @@ def aP(n):
     #  y is the biggest element and x is either the same as y or the
     #  2nd largest element; v and w are adjacent element indices
     #  to which x and y are being assigned, respectively.
-    a = [1]*n
+    a = [1] * n
     y = -1
     v = n
     while v > 0:
@@ -130,7 +121,7 @@ def aP(n):
         while x <= y:
             a[v] = x
             a[w] = y
-            yield a[:w + 1]
+            yield a[: w + 1]
             x += 1
             y -= 1
         a[v] = x + y
