@@ -27,9 +27,10 @@ class TSReader:
 
 class TSVReader:
     def __init__(self, fname):
-        self.freader = open(fname, 'r')
+        self.fname = fname
 
     def read(self):
-        for line in self.freader:
-            data = line.split()
-            yield list(map(float,data[1:])), data[0]
+        with open(self.fname, 'r') as freader:
+            for line in freader:
+                data = line.split()
+                yield list(map(float,data[1:])), data[0]
