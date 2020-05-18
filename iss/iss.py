@@ -54,8 +54,7 @@ def _compute_entry(dx, comp):
     exponents = np.reshape(comp, (-1, 1))
     dxs = np.tile(dx, (np.size(comp), 1))
     mat = np.power(dxs, exponents)
-    start = np.ones(np.size(dx))
-    mat[0,:] = np.cumsum(mat[0,:])
+    mat[0, :] = np.cumsum(mat[0, :])
     redux = fnt.reduce(_inner_shift, mat)
     return redux[-1]
 
@@ -97,7 +96,8 @@ def _aP(n):
     ==========
 
     .. [1] Generating Integer Partitions, [online],
-        Available: http://jeromekelleher.net/generating-integer-partitions.html
+        Available:
+        http://jeromekelleher.net/generating-integer-partitions.html
     .. [2] Jerome Kelleher and Barry O'Sullivan, "Generating All
         Partitions: A Comparison Of Two Encodings", [online],
         Available: http://arxiv.org/pdf/0909.2331v2.pdf
