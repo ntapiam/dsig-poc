@@ -50,7 +50,6 @@ class Iss:
         # Return the comulative sum of the increments
         return np.cumsum(dx)
 
-    @time_this
     def compute_parallel(self, x):
         """Computes the iterated-sums signature of a time series
 
@@ -68,12 +67,10 @@ class Iss:
         # Delete repeated entries and compute increments
         dx = np.diff(self._compress(x))
         # Compute entries for each basis element
-        print("Computing signature...")
         with ThreadPoolExecutor() as executor:
             sig = executor.map(lambda c: self._compute_entry(dx, c), self._words)
         return list(sig)
 
-    @time_this
     def compute(self, x):
         """Computes the iterated-sums signature of a time series
 
@@ -91,7 +88,6 @@ class Iss:
         # Delete repeated entries and compute increments
         dx = np.diff(self._compress(x))
         # Compute entries for each basis element
-        print("Computing signature...")
         sig = map(lambda c: self._compute_entry(dx, c), self._words)
         return list(sig)
 
