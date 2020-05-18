@@ -1,126 +1,188 @@
 import itertools as it
+import more_itertools as mit
 import functools as fnt
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor
+
+from .decorators import time_this
 
 
+class Iss:
+    def __init__(self, level=4):
+        self._level = level
+        self._words = self._gen_words(level)
+        self._sig = np.array([])
+        self._idx = np.power(2, range(level + 1))
 
-def _compress(x):
-    """Compresses a time series by deleting repeated values
+    @property
+    def sig(self):
+        return self._sig
 
-    :param x: Time series to be compressed
-    :returns: The compressed version of x
-    :rtype: list
-    """
+    @property
+    def sig_basis(self):
+        return list(zip(self.sig, self.words))
 
-    # Compute all increments and keep only the non-zero entries
-    dx = list(filter(lambda v: v != 0, np.diff(x)))
-    # Recover the initial value
-    dx.insert(0, x[0])
-    # Return the comulative sum of the increments
-    return np.cumsum(dx)
+    @property
+    def level(self):
+        return self._level
 
+    @property
+    def basis(self):
+        return self._words
 
-def compute(x, L, basis=False):
-    """Computes the iterated-sums signature of a time series
+    @level.setter
+    def level(self, level):
+        self._words = self._gen_words(level, self._words)
+        self._level = level
 
-    :param x: Time series
-    :param L: Maximum level of the signature to be computed
-    :param basis: Flag used to output basis elements together with
-        signature componentes (default=False)
-    :returns: A list of doubles representing the signature entries
-    :rtype: list
-    """
-    # Return empty list if no data
-    if not x:
-        return []
-    # Delete repeated entries and compute increments
-    dx = np.diff(_compress(x))
-    # Generate compositions
-    parts = it.chain.from_iterable(map(_aP, range(1, L + 1)))
-    uniqs = map(set, map(it.permutations, parts))
-    comps = it.chain.from_iterable(uniqs)
+    def _compress(self, x):
+        """Compresses a time series by deleting repeated values
 
-    # Compute entries for each basis element
-    sig = map(lambda c: _compute_entry(dx, c), comps)
-    return list(sig)
+        :param x: Time series to be compressed
+        :returns: The compressed version of x
+        :rtype: list
+        """
 
+        # Compute all increments and keep only the non-zero entries
+        dx = list(filter(lambda v: v != 0, np.diff(x)))
+        # Recover the initial value
+        dx.insert(0, x[0])
+        # Return the comulative sum of the increments
+        return np.cumsum(dx)
 
-def _compute_entry(dx, comp):
-    if np.size(dx) == 0:
-        return 0
-    exponents = np.reshape(comp, (-1, 1))
-    dxs = np.tile(dx, (np.size(comp), 1))
-    mat = np.power(dxs, exponents)
-    start = np.ones(np.size(dx))
-    mat[0,:] = np.cumsum(mat[0,:])
-    redux = fnt.reduce(_inner_shift, mat)
-    return redux[-1]
+    @time_this
+    def compute_parallel(self, x):
+        """Computes the iterated-sums signature of a time series
 
+        :param x: Time series
+        :param L: Maximum level of the signature to be computed
+        :param basis: Flag used to output basis elements together with
+            signature componentes (default=False)
+        :returns: A list of doubles representing the signature entries
+        :rtype: list
+        """
+        # Return empty list if no data
+        x = np.array(x)
+        if not (x.ndim and x.size):
+            return self
+        # Delete repeated entries and compute increments
+        dx = np.diff(self._compress(x))
+        # Compute entries for each basis element
+        print("Computing signature...")
+        with ThreadPoolExecutor() as executor:
+            sig = executor.map(lambda c: self._compute_entry(dx, c), self._words)
+        return list(sig)
 
-def _inner_shift(a, x, only=False):
-    a = np.pad(a, (1, 0))[:-1]
-    return np.cumsum(np.multiply(a, x))
+    @time_this
+    def compute(self, x):
+        """Computes the iterated-sums signature of a time series
 
+        :param x: Time series
+        :param L: Maximum level of the signature to be computed
+        :param basis: Flag used to output basis elements together with
+            signature componentes (default=False)
+        :returns: A list of doubles representing the signature entries
+        :rtype: list
+        """
+        # Return empty list if no data
+        x = np.array(x)
+        if not (x.ndim and x.size):
+            return []
+        # Delete repeated entries and compute increments
+        dx = np.diff(self._compress(x))
+        # Compute entries for each basis element
+        print("Computing signature...")
+        sig = map(lambda c: self._compute_entry(dx, c), self._words)
+        return list(sig)
 
-def _aP(n):
-    """Generate partitions of n as ordered lists in ascending
-    lexicographical order.
+    def _compute_entry(self, dx, comp):
+        if not (dx.ndim and dx.size):
+            return 0
+        exponents = np.reshape(comp, (-1, 1))
+        dxs = np.tile(dx, (np.size(comp), 1))
+        mat = np.power(dxs, exponents)
+        mat[0, :] = np.cumsum(mat[0, :])
+        redux = fnt.reduce(self._inner_shift, mat)
+        return redux[-1]
 
-    This highly efficient routine is based on the delightful
-    work of Kelleher and O'Sullivan.
+    def _inner_shift(self, a, x):
+        a = np.pad(a, (1, 0))[:-1]
+        return np.cumsum(np.multiply(a, x))
 
-    Examples
-    ========
+    def _gen_words(self, level, prev=[]):
+        # Generate compositions
+        print(f"Generating basis up to level {level}...")
+        if level < self._level:
+            return prev[: 2 ** level - 1]
+        else:
+            low = self._level if prev else 0
+            parts = map(self._aP, range(low, level + 1))
+            parts = it.chain.from_iterable(parts)
+            uniqs = map(set, map(it.permutations, parts))
+            comps = it.chain.from_iterable(uniqs)
+            prev = it.chain(prev, comps)
+            return list(prev)
 
-    >>> for i in aP(6): i
-    ...
-    [1, 1, 1, 1, 1, 1]
-    [1, 1, 1, 1, 2]
-    [1, 1, 1, 3]
-    [1, 1, 2, 2]
-    [1, 1, 4]
-    [1, 2, 3]
-    [1, 5]
-    [2, 2, 2]
-    [2, 4]
-    [3, 3]
-    [6]
+    def _aP(self, n):
+        """Generate partitions of n as ordered lists in ascending
+        lexicographical order.
 
-    >>> for i in aP(0): i
-    ...
-    []
+        This highly efficient routine is based on the delightful
+        work of Kelleher and O'Sullivan.
 
-    References
-    ==========
+        Examples
+        ========
 
-    .. [1] Generating Integer Partitions, [online],
-        Available: http://jeromekelleher.net/generating-integer-partitions.html
-    .. [2] Jerome Kelleher and Barry O'Sullivan, "Generating All
-        Partitions: A Comparison Of Two Encodings", [online],
-        Available: http://arxiv.org/pdf/0909.2331v2.pdf
+        >>> for i in aP(6): i
+        ...
+        [1, 1, 1, 1, 1, 1]
+        [1, 1, 1, 1, 2]
+        [1, 1, 1, 3]
+        [1, 1, 2, 2]
+        [1, 1, 4]
+        [1, 2, 3]
+        [1, 5]
+        [2, 2, 2]
+        [2, 4]
+        [3, 3]
+        [6]
 
-    """
-    #  The list `a`'s leading elements contain the partition in which
-    #  y is the biggest element and x is either the same as y or the
-    #  2nd largest element; v and w are adjacent element indices
-    #  to which x and y are being assigned, respectively.
-    a = [1] * n
-    y = -1
-    v = n
-    while v > 0:
-        v -= 1
-        x = a[v] + 1
-        while y >= 2 * x:
-            a[v] = x
-            y -= x
-            v += 1
-        w = v + 1
-        while x <= y:
-            a[v] = x
-            a[w] = y
-            yield a[: w + 1]
-            x += 1
-            y -= 1
-        a[v] = x + y
-        y = a[v] - 1
-        yield a[:w]
+        >>> for i in aP(0): i
+        ...
+        []
+
+        References
+        ==========
+
+        .. [1] Generating Integer Partitions, [online],
+            Available:
+            http://jeromekelleher.net/generating-integer-partitions.html
+        .. [2] Jerome Kelleher and Barry O'Sullivan, "Generating All
+            Partitions: A Comparison Of Two Encodings", [online],
+            Available: http://arxiv.org/pdf/0909.2331v2.pdf
+
+        """
+        #  The list `a`'s leading elements contain the partition in which
+        #  y is the biggest element and x is either the same as y or the
+        #  2nd largest element; v and w are adjacent element indices
+        #  to which x and y are being assigned, respectively.
+        a = [1] * n
+        y = -1
+        v = n
+        while v > 0:
+            v -= 1
+            x = a[v] + 1
+            while y >= 2 * x:
+                a[v] = x
+                y -= x
+                v += 1
+            w = v + 1
+            while x <= y:
+                a[v] = x
+                a[w] = y
+                yield a[: w + 1]
+                x += 1
+                y -= 1
+            a[v] = x + y
+            y = a[v] - 1
+            yield a[:w]
