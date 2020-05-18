@@ -2,7 +2,6 @@ import itertools as it
 import functools as fnt
 import numpy as np
 
-from .decorators import time_this
 
 
 def _compress(x):
@@ -21,7 +20,6 @@ def _compress(x):
     return np.cumsum(dx)
 
 
-@time_this
 def compute(x, L, basis=False):
     """Computes the iterated-sums signature of a time series
 
@@ -38,14 +36,11 @@ def compute(x, L, basis=False):
     # Delete repeated entries and compute increments
     dx = np.diff(_compress(x))
     # Generate compositions
-    print(f"Generating basis up to level {L}...")
     parts = it.chain.from_iterable(map(_aP, range(1, L + 1)))
     uniqs = map(set, map(it.permutations, parts))
     comps = it.chain.from_iterable(uniqs)
-    print("Done.")
 
     # Compute entries for each basis element
-    print("Computing signature...")
     sig = map(lambda c: _compute_entry(dx, c), comps)
     return list(sig)
 
