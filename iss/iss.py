@@ -46,6 +46,8 @@ def compute(x, L, basis=False):
 
 
 def _compute_entry(dx, comp):
+    if np.size(dx) == 0:
+        return 0
     exponents = np.reshape(comp, (-1, 1))
     dxs = np.tile(dx, (np.size(comp), 1))
     mat = np.power(dxs, exponents)

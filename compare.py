@@ -20,16 +20,16 @@ for line in args.results:
 		break
 	line = line.split('\t')
 	name = line[0]
-	dsig = float(line[1])/100.0
+	dsig = float(line[1])
 	improvements[name] = []
 	for rate in benchmark[name]:
 		if rate > 0:
-			improv = (rate-dsig)/rate
+			improv = 1 - dsig/rate
 		elif rate == 0 and dsig > 0:
 			improv = float('-inf')
 		else:
 			improv = 0
-		improvements[name].append(improv)
+        improvements[name].append(f"{impov:7.4f}")
 
 with open('improv.txt', 'w') as fp:
 	fp.write('Dataset EUC DTW-learn DTW default\n')

@@ -21,18 +21,18 @@ def test_dsig(train, test, L=4):
     dt = time.perf_counter()-t
     an = AnnoyIndex(2**L - 1, 'angular')
     for i, v in enumerate(sig_train):
-        an.add_item(i, v)
+        an.add_item(i, v[0])
     an.build(20)
 
     for v in sig_test:
-        idx = int(an.get_nns_by_vector(v, 1))
+        idx = an.get_nns_by_vector(v[0], 1)[0]
         if sig_train[idx][1] == v[1]:
             correct += 1
 
     print("processed %i inputs in %.4f s" % (len(sig_test), dt-dt2))
     print("total process time %.4f s" % dt)
     rate = 1-correct/len(sig_test)
-    print(f"dsig error rate: {rate:7.4f} \n")
+    print(f"dsig error rate: {rate*100:7.4f} \n")
     return rate, dt
 
 errors = {}
@@ -48,7 +48,7 @@ now = datetime.datetime.now()
 filename = 'results_' + now.strftime('%Y%m%d_%H%M%S') + '.txt'
 with open(filename, 'w') as fout:
     fout.write('Parameters: L=%i p=%f\n' % (L,p))
-    fout.write('Dataset\tError rate\tTime\n')
+    fout.write('Dataset\tError\tTime\n')
     for dirname, subdirs, files in os.walk('UCRArchive_2018/'):
         train = []
         test = []
