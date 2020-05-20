@@ -54,10 +54,7 @@ class Iss:
         """Computes the iterated-sums signature of a time series
 
         :param x: Time series
-        :param L: Maximum level of the signature to be computed
-        :param basis: Flag used to output basis elements together with
-            signature componentes (default=False)
-        :returns: A list of doubles representing the signature entries
+        :returns: A matrix of doubles representing the signature entries
         :rtype: list
         """
         # Return empty list if no data
@@ -68,7 +65,8 @@ class Iss:
         dx = np.diff(self._compress(x))
         # Compute entries for each basis element
         func = fnt.partial(self._compute_entry, dx)
-        self._sig = list(map(func, self._words))
+        sig = np.array([func(c) for c in self._words])
+        self._sig = np.transpose(sig)
         return self._sig
 
     def _compute_entry(self, dx, comp):
@@ -79,7 +77,7 @@ class Iss:
         mat = np.power(dxs, exponents)
         mat[0, :] = np.cumsum(mat[0, :])
         redux = fnt.reduce(self._inner_shift, mat)
-        return redux[-1]
+        return redux
 
     def _inner_shift(self, a, x):
         a = np.pad(a, (1, 0))[:-1]
