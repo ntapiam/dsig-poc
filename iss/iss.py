@@ -20,7 +20,7 @@ class Iss:
 
     @property
     def sig_basis(self):
-        return list(zip(self.sig, self.words))
+        return list(zip(self.sig, self._words))
 
     @property
     def level(self):
@@ -50,30 +50,6 @@ class Iss:
         # Return the comulative sum of the increments
         return np.cumsum(dx)
 
-    @time_this
-    def compute_parallel(self, x):
-        """Computes the iterated-sums signature of a time series
-
-        :param x: Time series
-        :param L: Maximum level of the signature to be computed
-        :param basis: Flag used to output basis elements together with
-            signature componentes (default=False)
-        :returns: A list of doubles representing the signature entries
-        :rtype: list
-        """
-        # Return empty list if no data
-        x = np.array(x)
-        if not (x.ndim and x.size):
-            return self
-        # Delete repeated entries and compute increments
-        dx = np.diff(self._compress(x))
-        # Compute entries for each basis element
-        print("Computing signature...")
-        with ThreadPoolExecutor() as executor:
-            sig = executor.map(lambda c: self._compute_entry(dx, c), self._words)
-        return list(sig)
-
-    @time_this
     def compute(self, x):
         """Computes the iterated-sums signature of a time series
 
@@ -91,9 +67,9 @@ class Iss:
         # Delete repeated entries and compute increments
         dx = np.diff(self._compress(x))
         # Compute entries for each basis element
-        print("Computing signature...")
-        sig = map(lambda c: self._compute_entry(dx, c), self._words)
-        return list(sig)
+        func = fnt.partial(self._compute_entry, dx)
+        self._sig = list(map(func, self._words))
+        return self._sig
 
     def _compute_entry(self, dx, comp):
         if not (dx.ndim and dx.size):
@@ -111,7 +87,6 @@ class Iss:
 
     def _gen_words(self, level, prev=[]):
         # Generate compositions
-        print(f"Generating basis up to level {level}...")
         if level < self._level:
             return prev[: 2 ** level - 1]
         else:
