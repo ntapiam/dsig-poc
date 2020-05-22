@@ -16,6 +16,10 @@ class Iss:
 
     @property
     def sig(self):
+        return self._sig[-1,:]
+
+    @property
+    def sig_full(self):
         return self._sig
 
     @property
@@ -67,7 +71,7 @@ class Iss:
         func = fnt.partial(self._compute_entry, dx)
         sig = np.array([func(c) for c in self._words])
         self._sig = np.transpose(sig)
-        return self._sig
+        return self
 
     def _compute_entry(self, dx, comp):
         if not (dx.ndim and dx.size):
