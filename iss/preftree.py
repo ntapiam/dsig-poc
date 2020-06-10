@@ -66,3 +66,51 @@ def gen_tree(level, root=Node()):
         gen_tree(level, t)
     return root
 
+
+
+
+class pTree:
+    def __init__(self, level):
+        self.level = level
+        self.words = []
+        self.parents = [] 
+        self.fill()
+        
+    def fill(self):
+        
+        # Stack Info
+        WordStack = [[]]
+        LevelStack = [self.level]
+        ParentStack = [-1]
+    
+        while len(LevelStack) > 0 :
+            level = LevelStack.pop()
+            word = WordStack.pop()
+            parent = ParentStack.pop()
+        
+            self.words.append(word)
+            self.parents.append(parent)
+            
+            parent = len(self.words)-1
+        
+            for s in reversed(range(1,level+1)) :
+        
+                word.append(s)
+                WordStack.append(word.copy())
+                word.pop()
+            
+                LevelStack.append( level - s )
+                
+                ParentStack.append(parent)
+    
+    def comp2index(self, comp ):
+        s=len(comp)
+        le=self.level
+        for x in comp :
+            s += ((1<<le)-1) - ((1<<(le-x+1)) - 1)
+            le -= x
+        return s
+    
+    def index2comp(self, index)
+        return self.words[index]
+    
