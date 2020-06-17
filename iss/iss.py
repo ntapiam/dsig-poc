@@ -1,6 +1,3 @@
-import itertools as it
-import more_itertools as mit
-import functools as fnt
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 
@@ -10,19 +7,15 @@ from . import preftree
 
 class Iss:
     def __init__(self, level=4):
-        self._words = preftree.Node()
-        self._words.expand(level)
+        self._tree = preftree.pTree(level)
         self._level = level
         self._sig = np.array([])
         self._dx = []
+        self._powers = np.array([])
 
     @property
     def sig(self):
         return self._sig[:, -1]
-
-    def sig_by_key(self, key):
-        node = self._words.lookup(key)
-        return node.value if node else None
 
     @property
     def sig_full(self):
@@ -38,14 +31,11 @@ class Iss:
 
     @property
     def basis(self):
-        return [t.key for t in self._words.bfs()]
+        return self._tree.basis
 
     @level.setter
     def level(self, level):
-        if level > self._level:
-            self._words.expand(level)
-        else:
-            self._words.contract(level)
+        self._tree.level = level
         self._level = level
 
     def _compress(self, x):
@@ -70,22 +60,36 @@ class Iss:
         :returns: A matrix of doubles representing the signature entries
         :rtype: list
         """
+        # Clean the data 
+        if not self._pre_process(x) : return []
+        # Compute entries for each basis element
+        self._prepare_workspace()
+        for k in range(1,1<<self._level):
+            self._sig[k] = self._compute_index(k)
+        return self
+
+    def _pre_process(self,x):
         x = np.array(x)
         # Return empty list if no data
         if not (x.ndim and x.size):
-            return []
+            return False
         # Delete repeated entries and compute increments
         self._dx = np.diff(self._compress(x))
-        # Compute entries for each basis element
-        self._sig = np.stack(list(self._words.bfs(self._compute_entry)))
-        return self
+        return True
 
-    def _compute_entry(self, parent, child):
-        if parent.key == ():
-            parent.value = np.ones(self._dx.size)
-            inner = parent.value
-        else:
-            inner = np.pad(parent.value, (1, 0))[:-1]
-        outer = np.power(self._dx, child.key[-1])
-        child.value = np.cumsum(inner * outer)
-        return child.value
+    def _prepare_workspace(self):
+        # Save powers of dx 
+        self._powers = np.zeros( (self._level+1,self._dx.size) )
+        self._powers[0] =  np.ones(self._dx.size)
+        for i in range(1,self._level):
+            self._powers[i] = np.power(self._dx, i)
+        # Allocate enough memory
+        self._sig = np.zeros( (1<<self._level,self._dx.size) )
+        self._sig[0] = np.ones(self._dx.size)
+
+    def _compute_index(self, k ):
+        parent = self._tree.parents[k]
+        key = self._tree.key[k]
+        inner = np.pad( self._sig[parent] , (1, 0))[:-1]
+        outer = self._powers[key]
+        return np.cumsum(inner * outer) 
