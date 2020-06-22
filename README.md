@@ -31,7 +31,7 @@ The result of `Iss.compute(x)` is stored in `Iss.sig`. The basis can be recovere
 People
 ------
 - Maintainer: [Nikolas Tapia](https://www.wias-berlin.de/people/tapia)
-- Contributors: Diego Caudillo
+- Contributors: Diego Caudillo, Joscha Diehl
 
 References
 ---------
