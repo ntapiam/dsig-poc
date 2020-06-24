@@ -81,7 +81,7 @@ class Iss:
         # Save powers of dx 
         self._powers = np.zeros( (self._level+1,self._dx.size) )
         self._powers[0] =  np.ones(self._dx.size)
-        for i in range(1,self._level):
+        for i in range(1,self._level+1):
             self._powers[i] = np.power(self._dx, i)
         # Allocate enough memory
         self._sig = np.zeros( (1<<self._level,self._dx.size) )
